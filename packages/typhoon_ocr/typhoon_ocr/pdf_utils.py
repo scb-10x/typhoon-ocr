@@ -1,5 +1,15 @@
+import importlib.util
 import shutil
 import warnings
+
+
+def check_pymupdf_available() -> bool:
+    """Check if PyMuPDF (fitz) is installed for Poppler-free in-memory PDF processing."""
+    return importlib.util.find_spec("fitz") is not None
+
+
+pymupdf_available = check_pymupdf_available()
+
 
 def check_pdf_utilities():
     """
@@ -34,6 +44,7 @@ def check_pdf_utilities():
         return False
     
     return True
+
 
 # Check PDF utilities availability (will be checked at runtime when needed)
 pdf_utils_available = check_pdf_utilities()
