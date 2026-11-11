@@ -129,6 +129,14 @@ class TestResizeIfNeeded:
         assert result is img  # Should return same object
         assert result.size == (200, 150)
 
+    def test_no_unwanted_upscaling_intermediate_image(self):
+        """Test that images larger than 300px but smaller than max_size are not upscaled."""
+        img = Image.new('RGB', (600, 400), color='purple')
+        result = resize_if_needed(img, max_size=2048)
+        
+        assert result is img  # Should return same object without upscaling
+        assert result.size == (600, 400)
+
     def test_resize_needed_wide_image(self):
         """Test resizing of wide images."""
         img = Image.new('RGB', (3000, 1000), color='blue')
@@ -176,16 +184,18 @@ class TestImageToBase64Png:
         assert len(decoded) > 0
 
     def test_image_format_conversion(self):
-        """Test that image is converted to RGB/JPEG."""
+        """Test that image is converted to RGB PNG format."""
         # Create RGBA image
         img = Image.new('RGBA', (50, 50), color=(255, 0, 0, 128))
         result = image_to_base64png(img)
         
         # Should be valid base64
         decoded = base64.b64decode(result)
+        assert decoded.startswith(b"\x89PNG\r\n\x1a\n")
         # Should be able to create image from decoded data
         reconstructed_img = Image.open(io.BytesIO(decoded))
         assert reconstructed_img.mode == 'RGB'
+        assert reconstructed_img.format == 'PNG'
 
     def test_different_image_modes(self):
         """Test conversion from different image modes."""

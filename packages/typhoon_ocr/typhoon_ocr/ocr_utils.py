@@ -466,37 +466,35 @@ def get_prompt(prompt_name: str) -> Callable[[str], str]:
 
 def resize_if_needed(img: Image.Image, max_size: int = 2048) -> Image.Image:
     """
-    Resize image if width or height exceeds 300 pixels.
-    Used for OCR v1.5 processing.
-    
+    Downscale image only when width or height exceeds max_size.
+    Preserves aspect ratio and prevents unwanted upscaling of smaller images.
+
     Args:
         img: PIL Image to resize
         max_size: Maximum size for the longest dimension
-        
+
     Returns:
-        Resized image or original if no resize needed
+        Resized image if dimension exceeds max_size, otherwise original image
     """
     width, height = img.size
-    # Only resize if one dimension exceeds 300
-    if width > 300 or height > 300:
+    if width <= 0 or height <= 0 or max_size <= 0:
+        return img
+    if width > max_size or height > max_size:
         if width >= height:
-            # scale width to max_size
             scale = max_size / float(width)
-            new_size = (max_size, int(height * scale))
+            new_size = (max_size, max(1, int(height * scale)))
         else:
-            # scale height to max_size
             scale = max_size / float(height)
-            new_size = (int(width * scale), max_size)
+            new_size = (max(1, int(width * scale)), max_size)
 
         img = img.resize(new_size, Image.Resampling.LANCZOS)
-        return img
-    else:
-        return img  # no resize
+    return img
 
-def image_to_base64png(img: Image.Image):
+def image_to_base64png(img: Image.Image, image_format: str = "PNG") -> str:
     buffered = io.BytesIO()
-    img = img.convert("RGB")
-    img.save(buffered, format="JPEG")
+    if img.mode != "RGB":
+        img = img.convert("RGB")
+    img.save(buffered, format=image_format)
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 def get_anchor_text_from_image(img: Image.Image):
